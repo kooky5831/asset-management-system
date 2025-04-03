@@ -23,7 +23,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @router.post("/login")
 async def login(data: LoginRequest):
-    print(f"email {data.email} and password {data.password} ")
+    # print(f"email {data.email} and password {data.password} ")
     user = await User.filter(email=data.email).first()
     if not user or not pwd_context.verify(data.password, user.password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
