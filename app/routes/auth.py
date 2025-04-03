@@ -45,11 +45,9 @@ async def register(data: RegisterRequest):
         last_name = data.last_name
     )
     
-    token = create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer", "user_id": user.id}
+    token = create_access_token({"email": user.email, "first_name":user.first_name ,"last_name": user.last_name })
+    return {"access_token": token, "token_type": "bearer"}
 
-@router.get("/me")
-async def get_current_user(token: TokenData = Depends(verify_token)):
-    if not token:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return token
+@router.post("/me")
+async def get_current_user(payload: dict = Depends(verify_token)):
+    return payload
