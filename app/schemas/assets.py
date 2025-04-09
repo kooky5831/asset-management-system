@@ -5,7 +5,6 @@ from datetime import date
 class AssetSchema(BaseModel):
     company: int
     name: str
-    asset_id: Optional[str] = None
     category: str
     location: Optional[int]
     purchase_price: float
