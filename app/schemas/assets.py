@@ -1,14 +1,18 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import date
 
 class AssetSchema(BaseModel):
+    asset_id: Optional[str] = None
     company: int
+    location: int
     name: str
     category: str
-    location: Optional[int]
+    department: str
+    assigned: str
     purchase_price: float
     purchase_date: date
+    status: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -34,6 +38,24 @@ class MaintenanceSchema(BaseModel):
     cost: float
     vendor: Optional[int]
     status: str
+
+    class Config:
+        from_attributes = True
+
+
+class AssetTransferSchema(BaseModel):
+    asset: int
+    company: int
+    from_location: Optional[int] = None
+    from_department: Optional[str] = None
+    from_assigned: Optional[str] = None
+    to_location: int
+    to_department: str
+    to_assigned: str
+    transferred_by: str
+    transfer_date: date
+    status: str = "pending"
+    note: Optional[str] = None
 
     class Config:
         from_attributes = True

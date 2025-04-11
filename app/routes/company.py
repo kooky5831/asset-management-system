@@ -39,6 +39,28 @@ async def delete_company(company_id: int):
     await company.delete()
     return {"message": "Company deleted successfully"}
 
+@router.post("/location", response_model=LocationSchema)
+async def create_location(location_data: LocationSchema):
+    company = await Company.get(id=location_data.company)
+    location = await Location.create(
+        company=company,
+        name=location_data.name,
+        code= location_data.code,
+        location_type=location_data.location_type,
+        country=location_data.country,
+        city=location_data.city,
+        address=location_data.address
+    )
+    return {
+        "company":company.id,
+        "name":location_data.name,
+        "code": location_data.code,
+        "location_type":location_data.location_type,
+        "country":location_data.country,
+        "city":location_data.city,
+        "address":location_data.address
+    }
+
 # 🚀 List Locations by Company
 @router.get("/{company_id}/locations", response_model=list[LocationSchema])
 async def list_locations(company_id: int):
