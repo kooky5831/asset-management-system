@@ -1,19 +1,19 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
 from datetime import date
 
 class AssetSchema(BaseModel):
     id: Optional[int] = None
-    asset_id: Optional[str] = None
-    company: int
-    location: int
-    name: str
-    category: str
-    department: str
-    assigned: str
-    purchase_price: float
-    purchase_date: date
-    status: Optional[str] = None
+    asset_id: Optional[str] = Field(None, description="Auto created and Unique identifier for the asset (e.g., AST-1234)")
+    company: int = Field(..., description="ID of the company that owns the asset")
+    location: int = Field(..., description="company location (e.g. 2)")
+    name: str = Field(..., description="asset name (e.g. Dell 18 Laptop)")
+    category: str = Field(..., description="asset category (e.g. Furniture,	IT Equipment, Furniture, Vehicle)")
+    department: str = Field(..., description="department for asset (e.g IT Department, Finance, Human Resources	)")
+    assigned: str = Field(..., description="assigned to User (e.g Jone Doe, Kevin)")
+    purchase_price: float = Field(..., description="asset purchase_price (e.g 1200)")
+    purchase_date: date = Field(..., description="date when asset purchased (e.g 2025-03-12)")
+    status: Optional[str] = Field(None, description="asset status (e.g in service, pending, disposed)")
 
     class Config:
         from_attributes = True
