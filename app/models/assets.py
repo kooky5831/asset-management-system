@@ -126,3 +126,14 @@ class AssetTransfer(Model):
     transferred_by = fields.CharField(max_length=100)
     transfer_date = fields.DateField()
     note = fields.TextField(max_length=400)
+
+# ✅ AssetDisposal Model
+class AssetDisposal(Model):
+    id = fields.IntField(pk=True)
+    asset = fields.ForeignKeyField("models.Asset", related_name="disposals", on_delete=fields.CASCADE)
+    company = fields.ForeignKeyField("models.Company", related_name="disposals")
+    method = fields.CharField(max_length=50)  # sale, scrap, donation
+    disposal_date = fields.DateField()
+    value_received = fields.DecimalField(max_digits=10, decimal_places=2)
+    note = fields.TextField(null=True)
+    approved_by = fields.CharField(max_length=100)
