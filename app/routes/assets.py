@@ -7,6 +7,12 @@ router = APIRouter()
 # ✅ List & Create Assets
 @router.get("/", response_model=list[AssetSchema])
 async def list_assets():
+    """
+    Get All Assets List
+
+    URL : http://localhost:8000/api/assets/
+
+    """ 
     assets = await Asset.all()
 
     result = []
@@ -29,6 +35,24 @@ async def list_assets():
 
 @router.post("/", response_model=AssetSchema)
 async def create_asset(asset_data: AssetSchema):
+    """
+    Create a new asset request Sample.
+
+    Request Body:
+
+    {
+        "company": 1,
+        "name": "Dell 18 Laptop",
+        "category": "it_equipment",
+        "location": 1,
+        "department": "Finance",
+        "assigned": "Jone Doe",
+        "purchase_price": 1200.00,
+        "purchase_date": "2025-04-15"
+    }
+
+    URL: http://16.171.11.180/api/assets/
+    """ 
     # Get the related Company instance
     company = await Company.get(id=asset_data.company)
     location = await Location.get(id=asset_data.location)
@@ -60,6 +84,14 @@ async def create_asset(asset_data: AssetSchema):
 # ✅ Retrieve Asset by ID
 @router.get("/{asset_id}", response_model=AssetSchema)
 async def get_asset(asset_id: str):
+    """
+    Get Asset by Asset_id
+
+    Example Asset_id : AST-8871
+
+    URL : http://16.171.11.180/api/assets/AST-8871
+
+    """ 
     asset = await Asset.get_or_none(asset_id=asset_id)
     print("Response data:", asset)
     if not asset:
@@ -81,6 +113,24 @@ async def get_asset(asset_id: str):
 # ✅ Create Transfer
 @router.post("/transfer", response_model=AssetTransferSchema)
 async def transfer_asset(data: AssetTransferSchema):
+    """
+    Create transfer asset
+
+    Request Body
+
+    {
+    "asset":  3,
+    "to_department": "Finance",
+    "to_assigned": "Jone Doe",
+    "to_location": 3,
+    "transferred_by": "Kevin",
+    "transfer_date": "2025-04-16",
+    "note": "this is sample transfer"
+    }
+
+    URL: http://16.171.11.180/api/assets/transfer
+
+    """ 
     asset = await Asset.get(id=data.asset)
     
     if asset.status == "Disposed":
@@ -145,6 +195,23 @@ async def transfer_asset(data: AssetTransferSchema):
 # ✅ Create Dispost
 @router.post("/disposal", response_model=dict)
 async def dispose_asset(data: AssetDisposalSchema):
+    """
+    Asset Diposal
+
+    Request Body:
+
+    {
+        "asset":2,
+        "method":"denote",
+        "disposal_date":"2025-04-12",
+        "value_received": 1200,
+        "note":"simple note",
+        "approved_by":"data"
+    }
+
+    URL : http://16.171.11.180/api/assets/disposal
+    
+    """
     asset = await Asset.get(id=data.asset)
 
     if asset.status == "Disposed":
