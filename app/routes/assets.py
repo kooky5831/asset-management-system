@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.models.assets import Asset, Maintenance, Vendor
-from app.schemas.assets import AssetSchema, MaintenanceSchema, VendorSchema
+from app.models.assets import Asset, AssetTransfer, Maintenance, Vendor
+from app.schemas.assets import AssetSchema, AssetTransferSchema, MaintenanceSchema, VendorSchema
 from app.utils import success_response, error_response
 from app.models.company import Company, Location
 router = APIRouter()
@@ -16,9 +16,11 @@ async def list_assets():
             "id": asset.id,
             "asset_id": asset.asset_id,
             "company": asset.company_id, 
+            "location": asset.location_id,  
             "name": asset.name,
             "category": asset.category,
-            "location": asset.location_id,  
+            "department": asset.department,
+            "assigned": asset.assigned,
             "purchase_price": asset.purchase_price,
             "purchase_date": asset.purchase_date,
             "status": asset.status
@@ -30,22 +32,27 @@ async def list_assets():
 async def create_asset(asset_data: AssetSchema):
     # Get the related Company instance
     company = await Company.get(id=asset_data.company)
-    
+    location = await Location.get(id=asset_data.location)
     asset = await Asset.create(
         company=company,
         name=asset_data.name,
+        location=location,
         category=asset_data.category,
+        department = asset_data.department,
+        assigned= asset_data.assigned,
         purchase_price=asset_data.purchase_price,
-        purchase_date=asset_data.purchase_date
+        purchase_date=asset_data.purchase_date,
     )
     
     return {
         "id": asset.id,
         "asset_id": asset.asset_id,
         "company": asset.company.id,
+        "location": asset.location.id,
         "name": asset.name,
         "category": asset.category,
-        "location": None,
+        "department": asset.department,
+        "assigned": asset.assigned,
         "purchase_price": asset.purchase_price,
         "purchase_date": asset.purchase_date,
         "status": asset.status
@@ -61,12 +68,62 @@ async def get_asset(asset_id: str):
         "id": asset.id,
         "asset_id": asset.asset_id,
         "company": asset.company_id,
+        "location": asset.location_id,
         "name": asset.name,
         "category": asset.category,
-        "location": asset.location_id,
+        "department": asset.department,
+        "assigned": asset.assigned,
         "purchase_price": asset.purchase_price,
         "purchase_date": asset.purchase_date,
         "status": asset.status
+    }
+
+@router.post("/transfer", response_model=AssetTransferSchema)
+async def transfer_asset(data: AssetTransferSchema):
+    asset = await Asset.get(id=data.asset)
+    
+    from_location_id = asset.location_id
+    from_department = asset.department
+    from_assigned = asset.assigned
+    company = await Company.get(id=data.company)
+    from_location = None
+    if from_location_id:
+        from_location = await Location.get(id=from_location_id)
+    
+    to_location = await Location.get(id=data.to_location)
+
+    asset.location = to_location
+    asset.assigned = data.to_assigned
+    asset.department = data.to_department
+    
+    await asset.save()
+    
+    transfer = await AssetTransfer.create(
+        asset=asset,
+        company=company,
+        from_location=from_location,
+        from_department=from_department,
+        from_assigned=from_assigned,
+        to_location=to_location,
+        to_department=data.to_department,
+        to_assigned=data.to_assigned,
+        transferred_by=data.transferred_by,
+        transfer_date=data.transfer_date,
+        note=data.note or ""
+    )
+    
+    return {
+        "asset": asset.id,
+        "company":company.id,
+        "from_location": from_location_id,  
+        "from_department": from_department,
+        "from_assigned": from_assigned,
+        "to_location": to_location.id,  
+        "to_department": data.to_department,
+        "to_assigned": data.to_assigned,
+        "transferred_by": data.transferred_by,
+        "transfer_date": data.transfer_date,
+        "note": data.note or ""
     }
 
 # ✅ List & Create Vendors
