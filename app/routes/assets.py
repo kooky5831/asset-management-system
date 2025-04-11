@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.models.assets import Asset, AssetTransfer, Maintenance, Vendor
-from app.schemas.assets import AssetSchema, AssetTransferSchema, MaintenanceSchema, VendorSchema
-from app.utils import success_response, error_response
+from app.models.assets import Asset, AssetTransfer, AssetDisposal, Maintenance, Vendor
+from app.schemas.assets import AssetSchema, AssetTransferSchema, AssetDisposalSchema, MaintenanceSchema, VendorSchema
 from app.models.company import Company, Location
 router = APIRouter()
 
@@ -62,6 +61,7 @@ async def create_asset(asset_data: AssetSchema):
 @router.get("/{asset_id}", response_model=AssetSchema)
 async def get_asset(asset_id: str):
     asset = await Asset.get_or_none(asset_id=asset_id)
+    print("Response data:", asset)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
     return {
@@ -78,14 +78,29 @@ async def get_asset(asset_id: str):
         "status": asset.status
     }
 
+# ✅ Create Transfer
 @router.post("/transfer", response_model=AssetTransferSchema)
 async def transfer_asset(data: AssetTransferSchema):
     asset = await Asset.get(id=data.asset)
     
+    if asset.status == "Disposed":
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Cannot transfer of this asset",
+                "reason": "Asset is already disposed"
+            }
+        )
+    
     from_location_id = asset.location_id
     from_department = asset.department
     from_assigned = asset.assigned
-    company = await Company.get(id=data.company)
+    
+    company_id = asset.company_id
+    company = None
+    if company_id:
+        company = await Company.get(id=company_id)
+
     from_location = None
     if from_location_id:
         from_location = await Location.get(id=from_location_id)
@@ -95,6 +110,7 @@ async def transfer_asset(data: AssetTransferSchema):
     asset.location = to_location
     asset.assigned = data.to_assigned
     asset.department = data.to_department
+    asset.status = "pending"
     
     await asset.save()
     
@@ -114,7 +130,7 @@ async def transfer_asset(data: AssetTransferSchema):
     
     return {
         "asset": asset.id,
-        "company":company.id,
+        "company":company_id,
         "from_location": from_location_id,  
         "from_department": from_department,
         "from_assigned": from_assigned,
@@ -124,6 +140,44 @@ async def transfer_asset(data: AssetTransferSchema):
         "transferred_by": data.transferred_by,
         "transfer_date": data.transfer_date,
         "note": data.note or ""
+    }
+
+# ✅ Create Dispost
+@router.post("/disposal", response_model=dict)
+async def dispose_asset(data: AssetDisposalSchema):
+    asset = await Asset.get(id=data.asset)
+
+    if asset.status == "Disposed":
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Cannot dispose of this asset",
+                "reason": "Asset is already disposed"
+            }
+        )
+    
+    company_id = asset.company_id
+    company = None
+    if company_id:
+        company = await Company.get(id=company_id)
+
+    await AssetDisposal.create(
+        asset=asset,
+        company=company,
+        method=data.method,
+        disposal_date=data.disposal_date,
+        value_received=data.value_received,
+        note=data.note,
+        approved_by=data.approved_by
+    )
+
+    asset.status = "Disposed"
+    await asset.save()
+
+    return {
+        "asset": asset.id,
+        "status": asset.status,
+        "message": "Asset disposed successfully"
     }
 
 # ✅ List & Create Vendors

@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import date
 
 class AssetSchema(BaseModel):
+    id: Optional[int] = None
     asset_id: Optional[str] = None
     company: int
     location: int
@@ -45,7 +46,7 @@ class MaintenanceSchema(BaseModel):
 
 class AssetTransferSchema(BaseModel):
     asset: int
-    company: int
+    company: Optional[int] = None
     from_location: Optional[int] = None
     from_department: Optional[str] = None
     from_assigned: Optional[str] = None
@@ -56,6 +57,19 @@ class AssetTransferSchema(BaseModel):
     transfer_date: date
     status: str = "pending"
     note: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AssetDisposalSchema(BaseModel):
+    asset: int
+    company: Optional[int] = None
+    method: str  # sale, scrap, donation
+    disposal_date: date
+    value_received: float
+    note: Optional[str]
+    approved_by: str
 
     class Config:
         from_attributes = True
